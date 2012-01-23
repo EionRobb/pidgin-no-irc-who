@@ -33,20 +33,21 @@ struct irc_conn {
 #include <debug.h>
 
 static void
-remove_irc_who_timeout(PurpleConnection *pc)
+remove_irc_who_timeout(PurpleAccount *account)
 {
 	struct irc_conn *irc;
+  PurpleConnection *pc;
+  
+  pc = purple_account_get_connection(account);
 	
 	if (!g_str_equal(purple_plugin_get_id(pc->prpl), "prpl-irc"))
-		return;
-	if (purple_connection_get_state(pc) != PURPLE_CONNECTED)
 		return;
 	
 	irc = (struct irc_conn *) pc->proto_data;
 	
 	purple_timeout_remove(irc->who_channel_timer);
 	
-	purple_debug_info("noircwho", "Removed the /who timeout on IRC account %s\n", purple_account_get_username(purple_connection_get_account(pc)));
+	purple_debug_info("noircwho", "Removed the /who timeout on IRC account %s\n", purple_account_get_username(account));
 }
 
 static gboolean
@@ -54,7 +55,7 @@ plugin_load (PurplePlugin * plugin)
 {
 	GList *conns;
 	
-	purple_signal_connect(purple_connections_get_handle(), "signed-on", plugin, PURPLE_CALLBACK(remove_irc_who_timeout), NULL);
+	purple_signal_connect(purple_accounts_get_handle(), "account-signed-on", plugin, PURPLE_CALLBACK(remove_irc_who_timeout), NULL);
 	
 	for(conns = purple_connections_get_all(); conns; conns = conns->next)
 	{
