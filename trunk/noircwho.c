@@ -3,6 +3,7 @@
 #endif
 
 #include <glib.h>
+#include <strings.h>
 
 #ifndef G_GNUC_NULL_TERMINATED
 # if __GNUC__ >= 4
@@ -36,9 +37,9 @@ static void
 remove_irc_who_timeout(PurpleAccount *account)
 {
 	struct irc_conn *irc;
-  PurpleConnection *pc;
-  
-  pc = purple_account_get_connection(account);
+	PurpleConnection *pc;
+	
+	pc = purple_account_get_connection(account);
 	
 	if (!g_str_equal(purple_plugin_get_id(pc->prpl), "prpl-irc"))
 		return;
@@ -50,17 +51,43 @@ remove_irc_who_timeout(PurpleAccount *account)
 	purple_debug_info("noircwho", "Removed the /who timeout on IRC account %s\n", purple_account_get_username(account));
 }
 
+static void
+irc_sending_text(PurpleConnection *pc, gchar **msg, gpointer userdata)
+{
+	gchar **old = msg;
+
+#define MATCHES(string)   !strncmp(*msg, string, sizeof(string) - 1)
+
+	if (MATCHES("WHO #")) {
+		*msg = NULL;
+		purple_debug_info("noircwho", "Removed /who on join\n");
+	}
+	
+	if (msg != old)
+		g_free(*old);
+}
+
 static gboolean
 plugin_load (PurplePlugin * plugin)
 {
 	GList *conns;
+	PurplePlugin *ircprpl;
 	
-	purple_signal_connect(purple_accounts_get_handle(), "account-signed-on", plugin, PURPLE_CALLBACK(remove_irc_who_timeout), NULL);
+	if (purple_major_version != 2)
+		return FALSE;
 	
-	for(conns = purple_connections_get_all(); conns; conns = conns->next)
-	{
-		remove_irc_who_timeout(conns->data);
+	if (purple_minor_version < 4) {
+		purple_signal_connect(purple_accounts_get_handle(), "account-signed-on", plugin, PURPLE_CALLBACK(remove_irc_who_timeout), NULL);
+		
+		for(conns = purple_connections_get_all(); conns; conns = conns->next)
+		{
+			remove_irc_who_timeout(conns->data);
+		}
 	}
+	
+	ircprpl = purple_find_prpl("prpl-irc");
+	if (ircprpl != NULL)
+		purple_signal_connect(ircprpl, "irc-sending-text", plugin, G_CALLBACK(irc_sending_text), NULL);
 	
 	return TRUE;
 }
@@ -73,8 +100,8 @@ plugin_unload (PurplePlugin * plugin)
 
 static PurplePluginInfo info = {
 	PURPLE_PLUGIN_MAGIC,
-	PURPLE_MAJOR_VERSION,
-	PURPLE_MINOR_VERSION,
+	2,
+	10,
 	PURPLE_PLUGIN_STANDARD,
 	NULL,
 	0,
@@ -83,7 +110,7 @@ static PurplePluginInfo info = {
 
 	"eionrobb-noircwho",
 	"No IRC /who",
-	"0.1",
+	"0.2",
 	"No IRC /who",
 	"No IRC /who",
 	"Eion Robb <eionrobb@gmail.com>",
