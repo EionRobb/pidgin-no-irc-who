@@ -3,7 +3,7 @@
 #endif
 
 #include <glib.h>
-#include <strings.h>
+#include <string.h>
 
 #ifndef G_GNUC_NULL_TERMINATED
 # if __GNUC__ >= 4
