@@ -3,7 +3,7 @@
 #endif
 
 #include <glib.h>
-#include <strings.h>
+#include <string.h>
 
 #ifndef G_GNUC_NULL_TERMINATED
 # if __GNUC__ >= 4
@@ -38,16 +38,16 @@ remove_irc_who_timeout(PurpleAccount *account)
 {
 	struct irc_conn *irc;
 	PurpleConnection *pc;
-	
+
 	pc = purple_account_get_connection(account);
-	
+
 	if (!g_str_equal(purple_plugin_get_id(pc->prpl), "prpl-irc"))
 		return;
-	
+
 	irc = (struct irc_conn *) pc->proto_data;
-	
+
 	purple_timeout_remove(irc->who_channel_timer);
-	
+
 	purple_debug_info("noircwho", "Removed the /who timeout on IRC account %s\n", purple_account_get_username(account));
 }
 
@@ -62,7 +62,7 @@ irc_sending_text(PurpleConnection *pc, gchar **msg, gpointer userdata)
 		*msg = NULL;
 		purple_debug_info("noircwho", "Removed /who on join\n");
 	}
-	
+
 	if (msg != old)
 		g_free(*old);
 }
@@ -72,23 +72,23 @@ plugin_load (PurplePlugin * plugin)
 {
 	GList *conns;
 	PurplePlugin *ircprpl;
-	
+
 	if (purple_major_version != 2)
 		return FALSE;
-	
+
 	if (purple_minor_version < 4) {
 		purple_signal_connect(purple_accounts_get_handle(), "account-signed-on", plugin, PURPLE_CALLBACK(remove_irc_who_timeout), NULL);
-		
+
 		for(conns = purple_connections_get_all(); conns; conns = conns->next)
 		{
 			remove_irc_who_timeout(conns->data);
 		}
 	}
-	
+
 	ircprpl = purple_find_prpl("prpl-irc");
 	if (ircprpl != NULL)
 		purple_signal_connect(ircprpl, "irc-sending-text", plugin, G_CALLBACK(irc_sending_text), NULL);
-	
+
 	return TRUE;
 }
 
