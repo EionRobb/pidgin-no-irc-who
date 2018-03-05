@@ -25,10 +25,11 @@ else
 PLUGIN_TARGET := $(PLUGIN_NAME).so
 endif
 
+PLUGIN_SOURCES := noircwho.c
 PLUGIN_OBJECTS := $(PLUGIN_SOURCES:%.c=%.o)
 
 CC ?= gcc
-CFLAGS ?= -O2 -g -g3
+CFLAGS ?= -O2 -g -g3 -fPIC
 PKG_CONFIG ?= pkg-config
 
 LIBPURPLE_PC_MODULE ?= purple
